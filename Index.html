@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flora De Luxe — Оптовий продаж квітів | Рівне</title>
+  <link href="https://googleapis.com" rel="stylesheet">
+  <style>
+    :root { --bg: #ffffff; --text: #0a0a0a; --muted: #666666; --border: #e5e5e5; --accent: #0a0a0a; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+    header { border-bottom: 1px solid var(--border); padding: 20px 5%; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); z-index: 100; }
+    .logo { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; }
+    .cart-btn { background: var(--accent); color: #fff; border: none; padding: 12px 24px; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: 0.2s; }
+    .cart-btn:hover { opacity: 0.85; }
+    .hero { padding: 80px 5% 60px; border-bottom: 1px solid var(--border); max-width: 1400px; margin: 0 auto; }
+    .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(36px, 5vw, 64px); font-weight: 500; line-height: 1.1; margin-bottom: 16px; }
+    .hero p { color: var(--muted); max-width: 540px; font-size: 15px; }
+    .filters { padding: 30px 5% 10px; max-width: 1400px; margin: 0 auto; display: flex; gap: 10px; flex-wrap: wrap; }
+    .filter-btn { background: transparent; border: 1px solid var(--border); padding: 8px 18px; font-size: 13px; cursor: pointer; transition: 0.2s; }
+    .filter-btn.active, .filter-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 32px; padding: 30px 5% 80px; max-width: 1400px; margin: 0 auto; }
+    .card { border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; transition: 0.3s; }
+    .card:hover { border-color: var(--accent); }
+    .card img { width: 100%; height: 300px; object-fit: cover; background: #f7f7f7; }
+    .card-body { padding: 20px; }
+    .card-cat { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+    .card-title { font-family: 'Cormorant Garamond', serif; font-size: 24px; margin: 6px 0; }
+    .card-meta { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 16px; }
+    .price { font-weight: 500; font-size: 16px; }
+    .add-btn { background: var(--accent); color: #fff; border: none; padding: 10px 16px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; justify-content: flex-end; }
+    .modal-content { background: #fff; width: 100%; max-width: 440px; height: 100%; padding: 32px; display: flex; flex-direction: column; justify-content: space-between; overflow-y: auto; }
+    .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .qty-controls button { width: 26px; height: 26px; border: 1px solid var(--border); background: #fff; cursor: pointer; }
+    input, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); margin-top: 10px; font-family: inherit; font-size: 14px; }
+    footer { background: #0a0a0a; color: #fff; padding: 60px 5%; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 40px; }
+    footer h3 { font-family: 'Cormorant Garamond', serif; font-size: 24px; margin-bottom: 12px; letter-spacing: 1px; }
+    footer p, footer a { color: #a3a3a3; font-size: 14px; text-decoration: none; display: block; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Flora De Luxe</div>
+  <button class="cart-btn" onclick="toggleCart()">Кошик (<span id="cart-count">0</span>)</button>
+</header>
+
+<section class="hero">
+  <h1>Оптовий каталог свіжозрізаних квітів</h1>
+  <p>Прямі поставки для флористів, студій та декораторів. Актуальна наявність та ціни оновлюються в реальному часі.</p>
+</section>
+
+<div class="filters" id="filters"></div>
+<div class="grid" id="catalog"><p>Завантаження актуального прайсу...</p></div>
+
+<div class="modal" id="cart-modal">
+  <div class="modal-content">
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h2 style="font-family:'Cormorant Garamond',serif; font-size:28px;">Оптове замовлення</h2>
+        <button onclick="toggleCart()" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+      </div>
+      <div id="cart-items"></div>
+    </div>
+    <div style="margin-top:24px;">
+      <div style="display:flex; justify-content:space-between; font-weight:500; font-size:18px; margin-bottom:16px;">
+        <span>Разом:</span>
+        <span><span id="cart-total">0</span> грн</span>
+      </div>
+      <input type="text" id="client-name" placeholder="Ваше ім'я або назва студії *" required>
+      <input type="tel" id="client-phone" placeholder="Номер телефону *" required>
+      <textarea id="client-comment" rows="2" placeholder="Коментар (дата самовивозу / доставки)"></textarea>
+      <button class="cart-btn" style="width:100%; margin-top:16px;" onclick="submitOrder()">Відправити замовлення</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div>
+    <h3>FLORA DE LUXE</h3>
+    <p>Оптовий продаж квітів та флористичного асортименту.</p>
+  </div>
+  <div>
+    <h3>Локація складу</h3>
+    <p>м. Рівне, вул. Будівельників, 2а</p>
+    <a href="https://google.com" target="_blank">Відкрити на Google Картах &rarr;</a>
+  </div>
+  <div>
+    <h3>Контакти</h3>
+    <a href="tel:+380688885022">+380 (68) 888 50 22</a>
+    <p>Прийом замовлень через сайт 24/7</p>
+  </div>
+</footer>
+
+<script>
+  const API_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR_w-blFRx_c2208i7nCZCC1ipmCkeVbsKUR_AnN5l_tyCt-jSVuCZhyVQMFOWM95u3301KT1iDiEB0/pub?output=csv
+";
+  let products = [];
+  let cart = {};
+
+  async function loadCatalog() {
+    try {
+      const res = await fetch(API_URL);
+      products = await res.json();
+      renderFilters();
+      renderProducts("Усі");
+    } catch (e) {
+      document.getElementById("catalog").innerHTML = "<p>Помилка завантаження прайсу. Перевірте посилання API_URL.</p>";
+    }
+  }
+
+  function renderFilters() {
+    const cats = ["Усі", ...new Set(products.map(p => p.category))];
+    document.getElementById("filters").innerHTML = cats.map((c, i) =>
+      `<button class="filter-btn ${i===0?'active':''}" onclick="filterCat('${c}', this)">${c}</button>`
+    ).join("");
+  }
+
+  function filterCat(cat, btn) {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderProducts(cat);
+  }
+
+  function renderProducts(cat) {
+    const list = cat === "Усі" ? products : products.filter(p => p.category === cat);
+    document.getElementById("catalog").innerHTML = list.map(p => `
+      <div class="card">
+        <img src="${p.image}" alt="${p.name}">
+        <div class="card-body">
+          <div class="card-cat">${p.category}</div>
+          <div class="card-title">${p.name}</div>
+          <div class="card-meta">Висота: ${p.height} | Пачка: ${p.pack} шт.</div>
+          <div class="card-footer">
+            <div class="price">${p.price} грн/шт <br><small style="color:#666;font-weight:300">(${p.price * p.pack} грн/пачка)</small></div>
+            <button class="add-btn" onclick="addToCart(${p.id})">+ 1 пачка</button>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function addToCart(id) {
+    cart[id] = (cart[id] || 0) + 1;
+    updateCartUI();
+  }
+
+  function changeQty(id, delta) {
+    cart[id] += delta;
+    if (cart[id] <= 0) delete cart[id];
+    updateCartUI();
+  }
+
+  function updateCartUI() {
+    let count = 0, total = 0, html = "";
+    for (let id in cart) {
+      const p = products.find(x => x.id == id);
+      const packs = cart[id];
+      const sum = p.price * p.pack * packs;
+      count += packs;
+      total += sum;
+      html += `<div class="cart-item">
+        <div><strong>${p.name}</strong><br><small>${packs} пач. (${packs * p.pack} шт) &times; ${p.price} грн</small></div>
+        <div class="qty-controls">
+          <button onclick="changeQty(${id}, -1)">-</button>
+          <span style="margin:0 8px">${packs}</span>
+          <button onclick="changeQty(${id}, 1)">+</button>
+        </div>
+      </div>`;
+    }
+    document.getElementById("cart-count").innerText = count;
+    document.getElementById("cart-total").innerText = total;
+    document.getElementById("cart-items").innerHTML = html || "<p style='color:#666'>Кошик порожній</p>";
+  }
+
+  function toggleCart() {
+    const m = document.getElementById("cart-modal");
+    m.style.display = m.style.display === "flex" ? "none" : "flex";
+  }
+
+  async function submitOrder() {
+    const name = document.getElementById("client-name").value.trim();
+    const phone = document.getElementById("client-phone").value.trim();
+    const comment = document.getElementById("client-comment").value.trim();
+    if (!name || !phone || Object.keys(cart).length === 0) return alert("Заповніть контакти та додайте товари!");
+
+    let itemsText = "", total = 0;
+    for (let id in cart) {
+      const p = products.find(x => x.id == id);
+      const packs = cart[id];
+      const sum = p.price * p.pack * packs;
+      total += sum;
